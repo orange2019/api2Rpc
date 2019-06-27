@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const jayson = require('jayson')
 const md5 = require('md5')
+
 const CONFIG = require('./config')
 
 var bodyParser = require('body-parser')
@@ -19,17 +20,29 @@ app.use(bodyParser.text({
 }))
 app.use(methodOverride())
 
+// 获取时间戳
 app.get('/timestamp', (req, res) => {
   return res.send(Date.now().toString())
 })
+
+// 接口签名验证
 /**
- * 鉴权
- * @param {*} req 
+ * 鉴权中间件
+ * @param {
+ *   headers {
+ *     timestamp: 0, // 时间戳（毫秒）
+ *     channel_id: '', // 渠道id
+ *     sign_key: '' // 渠道对应签名key
+ *   }
+ *   body {
+ *     sign: '' // 签名字段
+ *   }
+ * } req 
  * @param {*} res 
  * @param {*} next 
  */
 const apiAuthCheck = async (req, res, next) => {
-  // TODO
+
   let headers = req.headers
   let channelId = headers.channel_id || ''
   let signKey = headers.sign_key || ''
@@ -72,6 +85,8 @@ const apiAuthCheck = async (req, res, next) => {
       message: 'body param error : sign'
     })
   }
+
+  // 建timestamp和key加入body进行签名
   body.timestamp = timestamp
   body.key = signKey
 
@@ -119,6 +134,13 @@ let rpcRequest = (client, func, args) => {
 }
 
 // 处理rpc分发逻辑
+/**
+ * params {
+ *  mod: 模块
+ *  con: 业务controller
+ *  func: 方法
+ * }
+ */
 app.post('/:mod/:con/:func', async (req, res) => {
 
   let mod = req.params.mod
