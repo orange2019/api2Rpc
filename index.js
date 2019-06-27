@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express()
 const jayson = require('jayson')
+const md5 = require('md5')
 const CONFIG = require('./config')
 
 var bodyParser = require('body-parser')
@@ -29,8 +30,73 @@ app.get('/timestamp', (req, res) => {
  */
 const apiAuthCheck = async (req, res, next) => {
   // TODO
+  let headers = req.headers
+  let channelId = headers.channel_id || ''
+  let signKey = headers.sign_key || ''
+  let timestamp = headers.timestamp
+
+  if (timestamp - Date.now() > 5000) {
+    return res.json({
+      code: -1,
+      message: 'header timestamp error'
+    })
+  }
+
+  if (!channelId || !signKey) {
+    return res.json({
+      code: -1,
+      message: 'header param error'
+    })
+  }
+
+  let channelsConfig = CONFIG.channels
+  let channelKeys = {}
+  channelsConfig.forEach(channel => {
+    console.log(channel)
+    channelKeys[channel.id] = channel.key
+  })
+
+  if (signKey != channelKeys[channelId]) {
+    return res.json({
+      code: -1,
+      message: 'header param error : sign_key'
+    })
+  }
+
+  let body = req.body || {}
+  let sign = body.sign || ''
+
+  if (!sign) {
+    return res.json({
+      code: -1,
+      message: 'body param error : sign'
+    })
+  }
+  body.timestamp = timestamp
+  body.key = signKey
+
+  let signStrArr = []
+  Object.keys(body).sort().forEach(key => {
+
+    if (key != 'sign' && typeof key !== 'array' && typeof key !== 'object') {
+      signStrArr.push(`${key}=${body[key]}`)
+    }
+  })
+  let signStr = signStrArr.join('&')
+  console.log(signStr)
+  let signMd5 = md5(signStr)
+  console.log(signMd5)
+
+  if (sign !== signMd5) {
+    return res.json({
+      code: -1,
+      message: 'signature error'
+    })
+  }
+
   next()
 }
+
 app.use(apiAuthCheck)
 
 // rpc客户端请求

@@ -9,7 +9,11 @@ let config = {
       host: '127.0.0.1',
       port: 10001
     }
-  }
+  },
+  channels: [{
+    id: '111111',
+    key: '04778123a8649621848c4eb197b92234'
+  }]
 }
 
 if (fs.existsSync(path.join(__dirname, './' + env + '.js'))) {
