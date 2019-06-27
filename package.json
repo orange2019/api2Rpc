@@ -1,0 +1,26 @@
+{
+  "name": "api2rpc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "cross-env NODE_ENV=dev nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orange2019/api2Rpc.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/orange2019/api2Rpc/issues"
+  },
+  "homepage": "https://github.com/orange2019/api2Rpc#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "jayson": "^3.0.2",
+    "method-override": "^3.0.0"
+  }
+}
