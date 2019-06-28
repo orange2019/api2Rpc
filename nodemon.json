@@ -9,6 +9,7 @@
     "js": "node"
   },
   "watch": [
+    "lib/",
     "config/",
     "index.js"
   ],

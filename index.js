@@ -2,6 +2,8 @@ const express = require('express')
 const app = express()
 const jayson = require('jayson')
 const md5 = require('md5')
+const uuid = require('uuid')
+const log = require('./lib/log')('app')
 
 const CONFIG = require('./config')
 
@@ -43,10 +45,13 @@ app.get('/timestamp', (req, res) => {
  */
 const apiAuthCheck = async (req, res, next) => {
 
-  let headers = req.headers
+  let headers = req.headers || {}
+  headers.uuid = headers.uuid || uuid.v4()
   let channelId = headers.channel_id || ''
-  let signKey = headers.sign_key || ''
+  // let signKey = headers.sign_key || ''
+
   let timestamp = headers.timestamp
+  log.info(headers.uuid, channelId, timestamp)
 
   if (timestamp - Date.now() > 5000) {
     return res.json({
@@ -55,7 +60,7 @@ const apiAuthCheck = async (req, res, next) => {
     })
   }
 
-  if (!channelId || !signKey) {
+  if (!channelId) {
     return res.json({
       code: -1,
       message: 'header param error'
@@ -65,21 +70,17 @@ const apiAuthCheck = async (req, res, next) => {
   let channelsConfig = CONFIG.channels
   let channelKeys = {}
   channelsConfig.forEach(channel => {
-    console.log(channel)
     channelKeys[channel.id] = channel.key
   })
 
-  if (signKey != channelKeys[channelId]) {
-    return res.json({
-      code: -1,
-      message: 'header param error : sign_key'
-    })
-  }
+  let key = channelKeys[channelId]
+  log.info(headers.uuid, channelId, key)
 
   let body = req.body || {}
   let sign = body.sign || ''
 
   if (!sign) {
+    log.error(headers.uuid, channelId, 'no sign param')
     return res.json({
       code: -1,
       message: 'body param error : sign'
@@ -88,20 +89,19 @@ const apiAuthCheck = async (req, res, next) => {
 
   // 建timestamp和key加入body进行签名
   body.timestamp = timestamp
-  body.key = signKey
+  body.key = key
 
   let signStrArr = []
   Object.keys(body).sort().forEach(key => {
-
     if (key != 'sign' && typeof key !== 'array' && typeof key !== 'object') {
       signStrArr.push(`${key}=${body[key]}`)
     }
   })
   let signStr = signStrArr.join('&')
-  console.log(signStr)
+  log.info(headers.uuid, channelId, 'signStr', signStr)
   let signMd5 = md5(signStr)
-  console.log(signMd5)
-
+  log.info(headers.uuid, channelId, 'signMd5', signMd5)
+  log.info(headers.uuid, channelId, 'sign', sign)
   if (sign !== signMd5) {
     return res.json({
       code: -1,
@@ -167,8 +167,10 @@ app.post('/:mod/:con/:func', async (req, res) => {
   let rpcFunc = con + '_' + func
   let rpcArgs = req.body || {}
   rpcArgs.uuid = req.headers.uuid || '123456'
+  log.info(req.headers.uuid, req.headers.channel_id, rpcFunc, 'args', rpcArgs)
 
   rpcRet = await rpcRequest(client, rpcFunc, rpcArgs)
+  log.info(req.headers.uuid, req.headers.channel_id, rpcFunc, 'ret', rpcRet)
   // console.log(rpcRet)
   return res.json(rpcRet)
 })
