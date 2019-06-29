@@ -11,7 +11,8 @@
   "watch": [
     "lib/",
     "config/",
-    "index.js"
+    "index.js",
+    "client"
   ],
   "ignore": [
     ".svn",

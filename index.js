@@ -1,11 +1,13 @@
 const express = require('express')
 const app = express()
-const jayson = require('jayson')
+// const jayson = require('jayson')
 const md5 = require('md5')
 const uuid = require('uuid')
 const log = require('./lib/log')('app')
 
-const CONFIG = require('./config')
+let CONFIG = require('./config')
+CONFIG.rpcClients = require('./client/config.json')
+const CLIENTS = require('./client')
 
 var bodyParser = require('body-parser')
 var methodOverride = require('method-override')
@@ -115,23 +117,23 @@ const apiAuthCheck = async (req, res, next) => {
 app.use(apiAuthCheck)
 
 // rpc客户端请求
-const rpcClient = jayson.client
-let rpcRequest = (client, func, args) => {
-  return new Promise((r, j) => {
-    client.request(func, args, (err, response) => {
-      if (err) {
-        console.error(err.message || err)
-        r({
-          code: -1,
-          message: err.message || err
-        })
-      }
+// const rpcClient = jayson.client
+// let rpcRequest = (client, func, args) => {
+//   return new Promise((r, j) => {
+//     client.request(func, args, (err, response) => {
+//       if (err) {
+//         console.error(err.message || err)
+//         r({
+//           code: -1,
+//           message: err.message || err
+//         })
+//       }
 
-      console.log(response.result) // 2
-      r(response.result)
-    });
-  })
-}
+//       console.log(response.result) // 2
+//       r(response.result)
+//     });
+//   })
+// }
 
 // 处理rpc分发逻辑
 /**
@@ -158,18 +160,20 @@ app.post('/:mod/:con/:func', async (req, res) => {
     return res.json(ret)
   }
 
-  let clientConfig = CONFIG.rpcClients[mod]
-  let client = rpcClient.http({
-    host: clientConfig.host,
-    port: clientConfig.port
-  })
+  // let clientConfig = CONFIG.rpcClients[mod]
+  // let client = rpcClient.http({
+  //   host: clientConfig.host,
+  //   port: clientConfig.port
+  // })
+  let client = CLIENTS[mod + 'ProxyClient']
 
   let rpcFunc = con + '_' + func
   let rpcArgs = req.body || {}
   rpcArgs.uuid = req.headers.uuid || '123456'
   log.info(req.headers.uuid, req.headers.channel_id, rpcFunc, 'args', rpcArgs)
 
-  rpcRet = await rpcRequest(client, rpcFunc, rpcArgs)
+  // rpcRet = await rpcRequest(client, rpcFunc, rpcArgs)
+  rpcRet = await client.request(rpcFunc, rpcArgs)
   log.info(req.headers.uuid, req.headers.channel_id, rpcFunc, 'ret', rpcRet)
   // console.log(rpcRet)
   return res.json(rpcRet)

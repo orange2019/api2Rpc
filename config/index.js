@@ -5,12 +5,12 @@ const env = process.env.NODE_ENV
 let config = {
   port: 8000,
   // rpc客户端配置
-  rpcClients: {
-    pub: {
-      host: '127.0.0.1',
-      port: 10001
-    }
-  },
+  // rpcClients: {
+  //   pub: {
+  //     host: '127.0.0.1',
+  //     port: 10001
+  //   }
+  // },
   // api请求渠道配置
   channels: [{
     id: '111111',
